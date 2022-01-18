@@ -1,0 +1,18 @@
+#pragma kernel WavesDisplacement
+
+RWTexture2D<float4> Displacement;
+
+Texture2D<float2> HK_Dx;
+Texture2D<float2> HK_Dy;
+Texture2D<float2> HK_Dz;
+
+
+[numthreads(8,8,1)]
+void WavesDisplacement(uint3 id : SV_DispatchThreadID)
+{
+    float2 dx = HK_Dx[id.xy];
+    float2 dy = HK_Dy[id.xy];
+    float2 dz = HK_Dz[id.xy];
+
+    Displacement[id.xy] = float4(dx.x, dy.x, dz.x, 1.0);
+}

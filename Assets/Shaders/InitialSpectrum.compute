@@ -1,0 +1,46 @@
+#pragma kernel ComputeInitialSpectrum
+
+RWTexture2D<float4> H0_K_tilde;
+RWTexture2D<float4> H0_MINUSK_tilde;
+Texture2D<float4> Noise;
+
+uint Size;
+float2 windDirection;
+float windSpeed;
+float lengthScale;
+
+static const float PI = 3.1415926;
+static const float g = 9.81;
+
+[numthreads(8,8,1)]
+void ComputeInitialSpectrum(uint3 id : SV_DispatchThreadID)
+{
+	float L = 1000.0;
+	float A = 4.0;
+	float l = 0.5; 
+
+	float2 x = float2(id.xy) - float(Size) / 2.0;
+	float2 k = float2(2.0 * PI * x.x / L, 2.0 * PI * x.y / L) * lengthScale;
+
+	float L_ = (windSpeed * windSpeed) / g;
+	float mag = length(k);
+	if (mag < 0.00001) 
+		mag = 0.00001;
+	float magSq = mag * mag;
+
+	float h0k = sqrt((A / (magSq * magSq))
+		* pow(dot(normalize(k), normalize(windDirection)), 4.0)
+		* exp(-(1.0 / (magSq * L_ * L_)))
+		* exp(-magSq * pow(l, 2.0))) / sqrt(2.0);
+
+	float h0minusk = sqrt((A / (magSq * magSq))
+		* pow(dot(normalize(-k), normalize(windDirection)), 4.0)
+		* exp(-(1.0 / (magSq * L_ * L_)))
+		* exp(-magSq * pow(l, 2.0))) / sqrt(2.0);
+
+	h0k = clamp(h0k, 0, 1000000);
+	H0_K_tilde[id.xy] = float4(Noise[id.xy].xy * h0k, 0, 1);
+
+	h0minusk = clamp(h0k, 0, 1000000);
+	H0_MINUSK_tilde[id.xy] = float4(Noise[uint2((Size - id.x) % Size, (Size - id.y) % Size)].xy * h0minusk, 0, 1);
+}

@@ -1,0 +1,90 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CreateButterflyTexture
+#pragma kernel HorizontalInverseFFT
+#pragma kernel VerticalInverseFFT
+#pragma kernel Permute
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> ButterflyTexture;
+Buffer<int> ReversedIndices;
+RWTexture2D<float2> Buffer0;
+RWTexture2D<float2> Buffer1;
+uint Size;
+bool Pingpong;
+uint Step;
+
+static const float PI = 3.1415926;
+
+float2 ComplexMult(float2 a, float2 b)
+{
+	return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+
+[numthreads(1, 8, 1)]
+void CreateButterflyTexture(uint3 id : SV_DispatchThreadID)
+{
+	float k = (id.y * (Size / pow(2, id.x + 1))) % Size;
+	float2 twiddle = float2(cos(2 * PI * k / float(Size)), sin(2 * PI * k / float(Size)));
+
+	int butterflySpan = int(pow(2, id.x));
+	int butterflyWing = id.y % pow(2, id.x + 1) < pow(2, id.x) ? 1 : 0;
+
+	// First stage --> bit reversed indices
+	if (id.x == 0)
+	{
+		if (butterflyWing == 1) // top butterfly wing
+			ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, ReversedIndices[id.y], ReversedIndices[id.y + 1]);
+		else // bottom butterfly wing
+			ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, ReversedIndices[id.y - 1], ReversedIndices[id.y]);
+	}
+	// Second stage to log2(Size) stage
+	else
+	{
+		if (butterflyWing == 1) // top butterfly wing
+			ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, id.y, id.y + butterflySpan);
+		else // bottom butterfly wing
+			ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, id.y - butterflySpan, id.y);
+	}
+}
+
+[numthreads(8, 8, 1)]
+void HorizontalInverseFFT(uint3 id : SV_DispatchThreadID)
+{
+	float4 data = ButterflyTexture[uint2(Step, id.x)];
+	uint2 inputsIndices = (uint2)data.ba;
+	if (Pingpong)
+	{
+		Buffer1[id.xy] = Buffer0[uint2(inputsIndices.x, id.y)]
+			+ ComplexMult(float2(data.r, -data.g), Buffer0[uint2(inputsIndices.y, id.y)]);
+	}
+	else
+	{
+		Buffer0[id.xy] = Buffer1[uint2(inputsIndices.x, id.y)]
+			+ ComplexMult(float2(data.r, -data.g), Buffer1[uint2(inputsIndices.y, id.y)]);
+	}
+}
+
+[numthreads(8, 8, 1)]
+void VerticalInverseFFT(uint3 id : SV_DispatchThreadID)
+{
+	float4 data = ButterflyTexture[uint2(Step, id.y)];
+	uint2 inputsIndices = (uint2)data.ba;
+	if (Pingpong)
+	{
+		Buffer1[id.xy] = Buffer0[uint2(id.x, inputsIndices.x)]
+			+ ComplexMult(float2(data.r, -data.g), Buffer0[uint2(id.x, inputsIndices.y)]);
+	}
+	else
+	{
+		Buffer0[id.xy] = Buffer1[uint2(id.x, inputsIndices.x)]
+			+ ComplexMult(float2(data.r, -data.g), Buffer1[uint2(id.x, inputsIndices.y)]);
+	}
+}
+
+[numthreads(8, 8, 1)]
+void Permute(uint3 id : SV_DispatchThreadID)
+{
+	Buffer0[id.xy] = Buffer0[id.xy] * (1.0 - 2.0 * ((id.x + id.y) % 2));
+}
