@@ -312,7 +312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc43b0a5708d8314b988d7600146ac32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _texturePreview: 3
+  _texturePreview: 4
 --- !u!1 &1758188414
 GameObject:
   m_ObjectHideFlags: 0
@@ -346,11 +346,13 @@ MonoBehaviour:
   _size: 256
   _computeIFFT2D: 1
   _computeDisp: 1
+  _computeNormals: 1
   _recomputeInitials: 1
   _FFTShader: {fileID: 7200000, guid: d6ca0b31cb473064384ee600ff709dda, type: 3}
   _initialSpectrumShader: {fileID: 7200000, guid: aed936096ea54064f9f1065667e34de1, type: 3}
   _timeDependentSpectrumShader: {fileID: 7200000, guid: 9fa3796cd173bcb42b9c882a7b1b70e6, type: 3}
   _wavesDisplacementShader: {fileID: 7200000, guid: 9318cbd6da3bf5440aa356bc7ca34e60, type: 3}
+  _normalsShader: {fileID: 7200000, guid: f930847bf9a685e4583455f419b7730c, type: 3}
   _windDirection: {x: 1, y: 1}
   _windSpeed: 10
   _wavesCascadesCount: 1
@@ -360,6 +362,7 @@ MonoBehaviour:
   _smallWaves: 0.5
   _amplitude: 4
   _L: 1000
+  _g: 9.81
 --- !u!4 &1758188416
 Transform:
   m_ObjectHideFlags: 0

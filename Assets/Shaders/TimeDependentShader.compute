@@ -76,6 +76,8 @@ void ComputeTimeDependentSpectrum(uint3 id : SV_DispatchThreadID)
 	// dy
 	complex h_k_t_dy = add(mul(fourier_amp, exp_iwt), (mul(fourier_amp_conj, exp_iwt_inv)));
 
+	complex h_k_t_dy_i = make_complex(-h_k_t_dy.im, h_k_t_dy.real);
+
 	// dx
 	complex dx = make_complex(0.0, -k.x / magnitude);
 	complex h_k_t_dx = mul(dx, h_k_t_dy);

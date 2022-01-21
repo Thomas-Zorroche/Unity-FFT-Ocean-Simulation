@@ -1,0 +1,46 @@
+#pragma kernel GenerateNormals
+
+RWTexture2D<float4> Normalmap;
+RWTexture2D<float4> Displacement;
+
+float Size;
+
+float GetDisp(uint2 uv)
+{
+    //return Displacement[uv].r;
+    return Displacement[uv].r + Displacement[uv].g + Displacement[uv].b;
+}
+
+[numthreads(8,8,1)]
+void GenerateNormals(uint3 id : SV_DispatchThreadID)
+{
+    float2 texCoords = id.xy;
+    
+    float texelSize = 1.0 / Size;
+
+    // z0 -- z1 -- z2
+    // |	 |     |
+    // z3 -- h  -- z4
+    // |     |     |
+    // z5 -- z6 -- z7
+
+    float z0 = GetDisp(texCoords + float2(-texelSize, -texelSize));
+    float z1 = GetDisp(texCoords + float2(0, -texelSize));
+    float z2 = GetDisp(texCoords + float2(texelSize, -texelSize));
+    float z3 = GetDisp(texCoords + float2(-texelSize, 0));
+    float z4 = GetDisp(texCoords + float2(texelSize, 0));
+    float z5 = GetDisp(texCoords + float2(-texelSize, texelSize));
+    float z6 = GetDisp(texCoords + float2(0, texelSize));
+    float z7 = GetDisp(texCoords + float2(texelSize, texelSize));
+
+    float3 normal;
+    float normalStrength = 1.0;
+
+    // Sobel filter
+    normal.z = 1.0 / normalStrength;
+    normal.x = z0 + 2 * z3 + z5 - z2 - 2 * z4 - z7;
+    normal.y = z0 + 2 * z1 + z2 - z5 - 2 * z6 - z7;
+    normal = normalize(normal);
+
+    Normalmap[id.xy] = float4(normalize(normal), 1);
+}

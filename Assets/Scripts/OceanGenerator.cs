@@ -19,6 +19,7 @@ public class OceanGenerator : MonoBehaviour
     void Start()
     {
         _oceanMaterial.SetTexture("_Displacement", _wavesGenerator._waves[0]._displacement);
+        _oceanMaterial.SetTexture("_Normals", _wavesGenerator._waves[0]._normals);
         CreateMesh();
     }
 

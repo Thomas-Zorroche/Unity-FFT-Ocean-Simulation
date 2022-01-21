@@ -10,12 +10,14 @@ public class WavesGenerator : MonoBehaviour
 
     public bool _computeIFFT2D = true;
     public bool _computeDisp = false;
+    public bool _computeNormals = true;
     public bool _recomputeInitials = true;
 
     public ComputeShader _FFTShader;
     public ComputeShader _initialSpectrumShader;
     public ComputeShader _timeDependentSpectrumShader;
     public ComputeShader _wavesDisplacementShader;
+    public ComputeShader _normalsShader;
 
     public Vector2 _windDirection;
     public float _windSpeed;
@@ -40,7 +42,8 @@ public class WavesGenerator : MonoBehaviour
         _noise = GetNoiseTexture();
 
         _waves = new List<WavesCascade>();
-        _waves.Add(new WavesCascade(_size, _FFT, _initialSpectrumShader, _timeDependentSpectrumShader, _wavesDisplacementShader, _windDirection, _windSpeed, _noise, _lengthscale));
+        _waves.Add(new WavesCascade(_size, _FFT, _initialSpectrumShader, _timeDependentSpectrumShader, 
+            _wavesDisplacementShader, _normalsShader, _windDirection, _windSpeed, _noise, _lengthscale));
 
         InitializeWaves();
     }
@@ -68,7 +71,7 @@ public class WavesGenerator : MonoBehaviour
         foreach (var wave in _waves)
         {
             
-            wave.UpdateWaves(Time.time, _computeIFFT2D, _computeDisp, _lengthscale, _L, _g);
+            wave.UpdateWaves(Time.time, _computeIFFT2D, _computeDisp, _computeNormals, _lengthscale, _L, _g);
         }
     }
 

@@ -10,7 +10,8 @@ public class CameraPreview : MonoBehaviour
         Hk_Dy = 1,
         Hk_Dz = 2,
         Displacement = 3,
-        Butterfly
+        Normals = 4,
+        Butterfly = 5
     }
 
     public TexturePreview _texturePreview;
@@ -46,6 +47,9 @@ public class CameraPreview : MonoBehaviour
                     break;
                 case TexturePreview.Displacement:
                     texture = ocean._waves[0]._displacement;
+                    break;
+                case TexturePreview.Normals:
+                    texture = ocean._waves[0]._normals;
                     break;
                 case TexturePreview.Butterfly:
                     texture = ocean._FFT._butterflyTexture;

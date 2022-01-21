@@ -29,6 +29,8 @@ Shader "Custom/Ocean"
         };
 
         sampler2D _Displacement;
+        sampler2D _Normals;
+
         float _dispStrength;
         float _lengthScale;
         
@@ -41,13 +43,10 @@ Shader "Custom/Ocean"
 
             o.viewVector = _WorldSpaceCameraPos.xyz - mul(unity_ObjectToWorld, v.vertex).xyz;
             float viewDist = length(o.viewVector);
-            
-            
+
             float3 displacement = 0;
-            //displacement += tex2Dlod(_Displacement, worldUV / _lengthScale) * 0.00002;
             displacement += tex2Dlod(_Displacement, worldUV / _lengthScale) * _dispStrength * 0.01;
 
-            //v.vertex.xyz += mul(unity_WorldToObject, float3(0, displacement.x, 0));
             v.vertex.xyz += mul(unity_WorldToObject, displacement);
         }
 
@@ -55,6 +54,14 @@ Shader "Custom/Ocean"
         half _Glossiness;
         half _Metallic;
         fixed4 _Color;
+
+        float3 WorldToTangentNormalVector(Input IN, float3 normal) {
+            float3 t2w0 = WorldNormalVector(IN, float3(1, 0, 0));
+            float3 t2w1 = WorldNormalVector(IN, float3(0, 1, 0));
+            float3 t2w2 = WorldNormalVector(IN, float3(0, 0, 1));
+            float3x3 t2w = float3x3(t2w0, t2w1, t2w2);
+            return normalize(mul(t2w, normal));
+        }
 
         // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
         // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
@@ -65,11 +72,14 @@ Shader "Custom/Ocean"
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
-            // Albedo comes from a texture tinted by color
-            o.Albedo = _Color.rgb;
-            // Metallic and smoothness come from slider variables
-            o.Metallic = _Metallic;
-            o.Smoothness = _Glossiness;
+            float3 normals = tex2D(_Normals, IN.worldUV / _lengthScale).rgb;
+            o.Normal = normals;
+
+
+            //o.Albedo = _Color.rgb;
+
+            o.Metallic = 0.0;
+            o.Smoothness = 0.9;
             o.Alpha = _Color.a;
         }
         ENDCG

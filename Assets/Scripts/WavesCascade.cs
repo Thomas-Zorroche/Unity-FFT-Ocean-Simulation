@@ -13,6 +13,7 @@ public class WavesCascade
     readonly ComputeShader _initialSpectrumShader;
     public ComputeShader _timeDependentSpectrumShader;
     public ComputeShader _wavesDisplacementShader;
+    public ComputeShader _normalsShader;
 
     private RenderTexture _initialSpectrumTexture;
     private RenderTexture _initialSpectrumMinusKTexture;
@@ -22,14 +23,15 @@ public class WavesCascade
     public RenderTexture _HK_Dz;
 
     public RenderTexture _displacement;
+    public RenderTexture _normals;
 
     private Texture2D _noise;
 
     readonly int LOCAL_WORK_GROUPS = 8;
 
     public WavesCascade(int size, FastFourierTransform FFT, ComputeShader initialSpectrumShader, 
-        ComputeShader timeDependentSpectrumShader, ComputeShader wavesDisplacementShader, Vector2 windDirection, 
-        float windSpeed, Texture2D noise, float lenghtScale)
+        ComputeShader timeDependentSpectrumShader, ComputeShader wavesDisplacementShader, ComputeShader normalsShader,
+        Vector2 windDirection, float windSpeed, Texture2D noise, float lenghtScale)
     {
         _size = size;
         _FFT = FFT;
@@ -37,11 +39,13 @@ public class WavesCascade
         _initialSpectrumShader = initialSpectrumShader;
         _timeDependentSpectrumShader = timeDependentSpectrumShader;
         _wavesDisplacementShader = wavesDisplacementShader;
+        _normalsShader = normalsShader;
 
         _initialSpectrumTexture = TextureUtils.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _initialSpectrumMinusKTexture = TextureUtils.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _noise = noise;
         _displacement = TextureUtils.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
+        _normals = TextureUtils.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat, true);
 
         _HK_Dx = TextureUtils.CreateRenderTexture(_size);
         _HK_Dy = TextureUtils.CreateRenderTexture(_size);
@@ -50,6 +54,7 @@ public class WavesCascade
         KERNEL_INITIAL_SPECTRUM = _initialSpectrumShader.FindKernel("ComputeInitialSpectrum");
         KERNEL_TIME_DEPENDENT_SPECTRUM = _timeDependentSpectrumShader.FindKernel("ComputeTimeDependentSpectrum");
         KERNEL_WAVES_DISPLACEMENT = _wavesDisplacementShader.FindKernel("WavesDisplacement");
+        KERNEL_NORMALS = _normalsShader.FindKernel("GenerateNormals");
     }
 
     // Compute TF(h0(k)) and TF(h0(-k))
@@ -74,7 +79,7 @@ public class WavesCascade
         //TextureUtils.SavePNG(_initialSpectrumMinusKTexture, "InitialSpectrum_minusk");
     }
 
-    public void UpdateWaves(float time, bool computeIFFT2D, bool computeDisp, float lengthScale, float L, float g)
+    public void UpdateWaves(float time, bool computeIFFT2D, bool computeDisp, bool computeNormals, float lengthScale, float L, float g)
     {
         // Compute TF(h(k))
         _timeDependentSpectrumShader.SetTexture(KERNEL_TIME_DEPENDENT_SPECTRUM, CS_ID_HK_Dx, _HK_Dx);
@@ -106,6 +111,14 @@ public class WavesCascade
             _wavesDisplacementShader.SetTexture(KERNEL_WAVES_DISPLACEMENT, CS_ID_HK_Dz, _HK_Dz);
             _wavesDisplacementShader.Dispatch(KERNEL_WAVES_DISPLACEMENT, _size / LOCAL_WORK_GROUPS, _size / LOCAL_WORK_GROUPS, 1);
         }
+
+        if (computeNormals)
+        {
+            _normalsShader.SetTexture(KERNEL_NORMALS, CS_ID_DISP, _displacement);
+            _normalsShader.SetTexture(KERNEL_NORMALS, CS_ID_NORMALS, _normals);
+            _normalsShader.SetFloat(CS_ID_SIZE, _size);
+            _normalsShader.Dispatch(KERNEL_NORMALS, _size / LOCAL_WORK_GROUPS, _size / LOCAL_WORK_GROUPS, 1);
+        }
     }
 
 
@@ -113,10 +126,10 @@ public class WavesCascade
     readonly int KERNEL_INITIAL_SPECTRUM;
     readonly int KERNEL_TIME_DEPENDENT_SPECTRUM;
     readonly int KERNEL_WAVES_DISPLACEMENT;
+    readonly int KERNEL_NORMALS;
 
     // Compute shader uniforms Ids
     readonly int CS_ID_SIZE = Shader.PropertyToID("Size");
-    //readonly int CS_ID_A = Shader.PropertyToID("A");
     readonly int CS_ID_WIND_DIRECTION = Shader.PropertyToID("windDirection");
     readonly int CS_ID_WIND_SPEED = Shader.PropertyToID("windSpeed");
     readonly int CS_ID_NOISE = Shader.PropertyToID("Noise");
@@ -137,6 +150,7 @@ public class WavesCascade
     
     readonly int CS_ID_TIME = Shader.PropertyToID("Time");
     readonly int CS_ID_DISP = Shader.PropertyToID("Displacement");
+    readonly int CS_ID_NORMALS = Shader.PropertyToID("Normalmap");
     
 
 
