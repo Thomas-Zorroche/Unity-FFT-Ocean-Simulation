@@ -53,11 +53,17 @@ public class WavesCascade
     }
 
     // Compute TF(h0(k)) and TF(h0(-k))
-    public void ComputeInitialSpectrum(Vector2 windDirection, float windSpeed, float lengthScale)
+    public void ComputeInitialSpectrum(Vector2 windDirection, float windSpeed, float lengthScale, 
+        float exponent, float smallWaves, float amplitude, float L, float g)
     {
         _initialSpectrumShader.SetInt(CS_ID_SIZE, _size);
         _initialSpectrumShader.SetFloat(CS_ID_WIND_SPEED, windSpeed);
         _initialSpectrumShader.SetFloat(CS_ID_LENGTH_SCALE, lengthScale);
+        _initialSpectrumShader.SetFloat(CS_ID_EXPONENT, exponent);
+        _initialSpectrumShader.SetFloat(CS_ID_SMALL_WAVES, smallWaves);
+        _initialSpectrumShader.SetFloat(CS_ID_AMPLITUDE, amplitude);
+        _initialSpectrumShader.SetFloat(CS_ID_L, L);
+        _initialSpectrumShader.SetFloat(CS_ID_G, g);
         _initialSpectrumShader.SetVector(CS_ID_WIND_DIRECTION, windDirection);
         _initialSpectrumShader.SetTexture(KERNEL_INITIAL_SPECTRUM, CS_ID_NOISE, _noise);
         _initialSpectrumShader.SetTexture(KERNEL_INITIAL_SPECTRUM, CS_ID_H0_TILDE, _initialSpectrumTexture);
@@ -68,7 +74,7 @@ public class WavesCascade
         //TextureUtils.SavePNG(_initialSpectrumMinusKTexture, "InitialSpectrum_minusk");
     }
 
-    public void UpdateWaves(float time, bool computeIFFT2D, bool computeDisp, float lengthScale)
+    public void UpdateWaves(float time, bool computeIFFT2D, bool computeDisp, float lengthScale, float L, float g)
     {
         // Compute TF(h(k))
         _timeDependentSpectrumShader.SetTexture(KERNEL_TIME_DEPENDENT_SPECTRUM, CS_ID_HK_Dx, _HK_Dx);
@@ -79,6 +85,8 @@ public class WavesCascade
         _timeDependentSpectrumShader.SetFloat(CS_ID_SIZE, _size);
         _timeDependentSpectrumShader.SetFloat(CS_ID_TIME, time);
         _timeDependentSpectrumShader.SetFloat(CS_ID_LENGTH_SCALE, lengthScale);
+        _timeDependentSpectrumShader.SetFloat(CS_ID_L, L);
+        _timeDependentSpectrumShader.SetFloat(CS_ID_G, g);
         _timeDependentSpectrumShader.Dispatch(KERNEL_TIME_DEPENDENT_SPECTRUM, _size / LOCAL_WORK_GROUPS, _size / LOCAL_WORK_GROUPS, 1);
 
         // Compute IFFT2D 
@@ -113,6 +121,12 @@ public class WavesCascade
     readonly int CS_ID_WIND_SPEED = Shader.PropertyToID("windSpeed");
     readonly int CS_ID_NOISE = Shader.PropertyToID("Noise");
     readonly int CS_ID_LENGTH_SCALE = Shader.PropertyToID("lengthScale");
+
+    readonly int CS_ID_EXPONENT = Shader.PropertyToID("exponent");
+    readonly int CS_ID_SMALL_WAVES = Shader.PropertyToID("smallWaves");
+    readonly int CS_ID_AMPLITUDE = Shader.PropertyToID("amplitude");
+    readonly int CS_ID_L = Shader.PropertyToID("L");
+    readonly int CS_ID_G = Shader.PropertyToID("g");
 
     readonly int CS_ID_H0_TILDE = Shader.PropertyToID("H0_K_tilde");
     readonly int CS_ID_H0_TILDE_MINUS_K = Shader.PropertyToID("H0_MINUSK_tilde");

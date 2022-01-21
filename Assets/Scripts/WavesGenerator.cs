@@ -23,6 +23,11 @@ public class WavesGenerator : MonoBehaviour
     public uint _wavesCascadesCount;
     public float _lengthscale;
     public float _dispStrength;
+    public float _exponent;
+    public float _smallWaves;
+    public float _amplitude;
+    public float _L;
+    public float _g;
 
     public List<WavesCascade> _waves;
     public FastFourierTransform _FFT;
@@ -45,7 +50,8 @@ public class WavesGenerator : MonoBehaviour
     {
         foreach (var wave in _waves)
         {
-            wave.ComputeInitialSpectrum(_windDirection, _windSpeed, _lengthscale);
+            wave.ComputeInitialSpectrum(_windDirection, _windSpeed, _lengthscale, 
+                _exponent, _smallWaves, _amplitude, _L, _g);
         }
     }
 
@@ -62,7 +68,7 @@ public class WavesGenerator : MonoBehaviour
         foreach (var wave in _waves)
         {
             
-            wave.UpdateWaves(Time.time, _computeIFFT2D, _computeDisp, _lengthscale);
+            wave.UpdateWaves(Time.time, _computeIFFT2D, _computeDisp, _lengthscale, _L, _g);
         }
     }
 

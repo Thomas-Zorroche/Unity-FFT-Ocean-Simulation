@@ -356,6 +356,10 @@ MonoBehaviour:
   _wavesCascadesCount: 1
   _lengthscale: 100
   _dispStrength: 20
+  _exponent: 2
+  _smallWaves: 0.5
+  _amplitude: 4
+  _L: 1000
 --- !u!4 &1758188416
 Transform:
   m_ObjectHideFlags: 0

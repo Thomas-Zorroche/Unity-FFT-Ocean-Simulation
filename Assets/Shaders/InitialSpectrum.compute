@@ -9,16 +9,17 @@ float2 windDirection;
 float windSpeed;
 float lengthScale;
 
+float exponent;
+float L;
+float amplitude;
+float smallWaves;
+float g;
+
 static const float PI = 3.1415926;
-static const float g = 9.81;
 
 [numthreads(8,8,1)]
 void ComputeInitialSpectrum(uint3 id : SV_DispatchThreadID)
 {
-	float L = 1000.0;
-	float A = 4.0;
-	float l = 0.5; 
-
 	float2 x = float2(id.xy) - float(Size) / 2.0;
 	float2 k = float2(2.0 * PI * x.x / L, 2.0 * PI * x.y / L) * lengthScale;
 
@@ -28,15 +29,15 @@ void ComputeInitialSpectrum(uint3 id : SV_DispatchThreadID)
 		mag = 0.00001;
 	float magSq = mag * mag;
 
-	float h0k = sqrt((A / (magSq * magSq))
-		* pow(dot(normalize(k), normalize(windDirection)), 4.0)
+	float h0k = sqrt((amplitude / (magSq * magSq))
+		* pow(abs(dot(normalize(k), normalize(windDirection))), exponent)
 		* exp(-(1.0 / (magSq * L_ * L_)))
-		* exp(-magSq * pow(l, 2.0))) / sqrt(2.0);
+		* exp(-magSq * pow(smallWaves, 2.0))) / sqrt(2.0);
 
-	float h0minusk = sqrt((A / (magSq * magSq))
-		* pow(dot(normalize(-k), normalize(windDirection)), 4.0)
+	float h0minusk = sqrt((amplitude / (magSq * magSq))
+		* pow(abs(dot(normalize(-k), normalize(windDirection))), exponent)
 		* exp(-(1.0 / (magSq * L_ * L_)))
-		* exp(-magSq * pow(l, 2.0))) / sqrt(2.0);
+		* exp(-magSq * pow(smallWaves, 2.0))) / sqrt(2.0);
 
 	h0k = clamp(h0k, 0, 1000000);
 	H0_K_tilde[id.xy] = float4(Noise[id.xy].xy * h0k, 0, 1);

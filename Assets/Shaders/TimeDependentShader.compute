@@ -10,13 +10,10 @@ RWTexture2D<float4> H0_MINUSK_tilde;
 float Time;
 float Size;
 float lengthScale;
+float L;
+float g;
 
 static const float PI = 3.1415926;
-
-//float2 ComplexMult(float2 a, float2 b)
-//{
-//    return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
-//}
 
 struct complex
 {
@@ -57,8 +54,6 @@ complex conj(complex c)
 [numthreads(8,8,1)]
 void ComputeTimeDependentSpectrum(uint3 id : SV_DispatchThreadID)
 {
-    float L = 1000.0;
-
     float2 x = float2(id.xy) - float(Size) / 2.0;
 
     float2 k = float2(2.0 * PI * x.x / L, 2.0 * PI * x.y / L) * lengthScale;
@@ -66,7 +61,7 @@ void ComputeTimeDependentSpectrum(uint3 id : SV_DispatchThreadID)
 	float magnitude = length(k);
 	if (magnitude < 0.0001) magnitude = 0.0001;
 
-	float w = sqrt(9.81 * magnitude);
+	float w = sqrt(g * magnitude);
 
 	complex fourier_amp = make_complex(H0_K_tilde[id.xy].r, H0_K_tilde[id.xy].g);
 	complex fourier_amp_conj = conj(make_complex(H0_MINUSK_tilde[id.xy].r, H0_MINUSK_tilde[id.xy].g));
@@ -91,9 +86,6 @@ void ComputeTimeDependentSpectrum(uint3 id : SV_DispatchThreadID)
 
 
 	HK_Dx[id.xy] = float2(h_k_t_dx.real, h_k_t_dx.im);
-	
-	//HK_Dy[id.xy] = float2(h_k_t_dy.real, h_k_t_dy.im);
 	HK_Dy[id.xy] = float2(0, h_k_t_dy.im);
-	
 	HK_Dz[id.xy] = float2(h_k_t_dz.real, h_k_t_dz.im);
 }
