@@ -22,14 +22,19 @@ public class WavesGenerator : MonoBehaviour
     public Vector2 _windDirection;
     public float _windSpeed;
 
-    public uint _wavesCascadesCount;
-    public float _lengthscale;
-    public float _dispStrength;
+    public float _lengthscale0;
+    public float _lengthscale1;
+
+    public float _dispStrength0;
+    public float _dispStrength1;
     public float _exponent;
     public float _smallWaves;
     public float _amplitude;
     public float _L;
     public float _g;
+
+    [SerializeField, Range(0.0f, 1.0f)]
+    public float _roughness;
 
     public List<WavesCascade> _waves;
     public FastFourierTransform _FFT;
@@ -42,8 +47,12 @@ public class WavesGenerator : MonoBehaviour
         _noise = GetNoiseTexture();
 
         _waves = new List<WavesCascade>();
+
         _waves.Add(new WavesCascade(_size, _FFT, _initialSpectrumShader, _timeDependentSpectrumShader, 
-            _wavesDisplacementShader, _normalsShader, _windDirection, _windSpeed, _noise, _lengthscale));
+            _wavesDisplacementShader, _normalsShader, _windDirection, _windSpeed, _noise, _lengthscale0));
+
+        _waves.Add(new WavesCascade(_size, _FFT, _initialSpectrumShader, _timeDependentSpectrumShader,
+            _wavesDisplacementShader, _normalsShader, _windDirection, _windSpeed, _noise, _lengthscale1));
 
         InitializeWaves();
     }
@@ -51,11 +60,8 @@ public class WavesGenerator : MonoBehaviour
 
     private void InitializeWaves()
     {
-        foreach (var wave in _waves)
-        {
-            wave.ComputeInitialSpectrum(_windDirection, _windSpeed, _lengthscale, 
-                _exponent, _smallWaves, _amplitude, _L, _g);
-        }
+        _waves[0].ComputeInitialSpectrum(_windDirection, _windSpeed, _lengthscale0, _exponent, _smallWaves, _amplitude, _L, _g);
+        _waves[1].ComputeInitialSpectrum(_windDirection, _windSpeed, _lengthscale1, _exponent, _smallWaves, _amplitude, _L, _g);
     }
 
     // Update is called once per frame
@@ -63,16 +69,17 @@ public class WavesGenerator : MonoBehaviour
     {
         if (_recomputeInitials)
         {
-            Shader.SetGlobalFloat("_lengthScale", _lengthscale);
-            Shader.SetGlobalFloat("_dispStrength", _dispStrength);
+            Shader.SetGlobalFloat("_lengthScale0", _lengthscale0);
+            Shader.SetGlobalFloat("_lengthScale1", _lengthscale1);
+            Shader.SetGlobalFloat("_dispStrength0", _dispStrength0);
+            Shader.SetGlobalFloat("_dispStrength1", _dispStrength1);
+            Shader.SetGlobalFloat("_roughness", _roughness);
             InitializeWaves();
         }
 
-        foreach (var wave in _waves)
-        {
             
-            wave.UpdateWaves(Time.time, _computeIFFT2D, _computeDisp, _computeNormals, _lengthscale, _L, _g);
-        }
+        _waves[0].UpdateWaves(Time.time, _computeIFFT2D, _computeDisp, _computeNormals, _lengthscale0, _L, _g);
+        _waves[1].UpdateWaves(Time.time, _computeIFFT2D, _computeDisp, _computeNormals, _lengthscale1, _L, _g);
     }
 
     private void OnDestroy()

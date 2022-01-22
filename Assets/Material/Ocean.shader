@@ -31,8 +31,12 @@ Shader "Custom/Ocean"
         sampler2D _Displacement;
         sampler2D _Normals;
 
-        float _dispStrength;
-        float _lengthScale;
+        float _dispStrength0;
+        float _dispStrength1;
+        float _lengthScale0;
+        float _lengthScale1;
+
+        float _roughness;
         
         void vert(inout appdata_full v, out Input o)
         {
@@ -45,7 +49,8 @@ Shader "Custom/Ocean"
             float viewDist = length(o.viewVector);
 
             float3 displacement = 0;
-            displacement += tex2Dlod(_Displacement, worldUV / _lengthScale) * _dispStrength * 0.01;
+            displacement += tex2Dlod(_Displacement, worldUV / _lengthScale0) * _dispStrength0 * 0.01;
+            displacement += tex2Dlod(_Displacement, worldUV / _lengthScale1) * _dispStrength1 * 0.01;
 
             v.vertex.xyz += mul(unity_WorldToObject, displacement);
         }
@@ -72,14 +77,15 @@ Shader "Custom/Ocean"
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
-            float3 normals = tex2D(_Normals, IN.worldUV / _lengthScale).rgb;
-            o.Normal = normals;
+            float3 normals = tex2D(_Normals, IN.worldUV / _lengthScale0).rgb;
+            normals += tex2D(_Normals, IN.worldUV / _lengthScale1).rgb;
+            
+            o.Normal = normalize(normals);
 
-
-            //o.Albedo = _Color.rgb;
+            o.Albedo = _Color.rgb;
 
             o.Metallic = 0.0;
-            o.Smoothness = 0.9;
+            o.Smoothness = 1.0 - _roughness;
             o.Alpha = _Color.a;
         }
         ENDCG
